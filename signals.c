@@ -10,6 +10,7 @@
 /*every process have "num" that 
 is less in 1 from his so he can send signal to the next process
 */
+
 int num;
 //the pid of the five process
 int pids[5];
