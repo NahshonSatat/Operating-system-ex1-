@@ -11,7 +11,7 @@
 
 int checkSize;
 
-
+// the signal handler function - chack if the string is not 32
 void sig_handler(int signo)
 {
   if (signo == SIGINT){
@@ -30,55 +30,69 @@ int main()
 
         char usr_str[32];
         int pid;
-
+      // if one of the pipes didnt work
         if (pipe(pipe1) == -1 || pipe(pipe2) == -1)
         {
                 printf("Pipe failed.");
                 return 1;
         }
-       
+       // forking 
         pid = fork() ;
+        //if the fork didnt work
         if (pid  < 0) 
         {
                 printf("Fork failed");
                 return 1;
         }
-
-        else if (pid > 0) //Parent process:
+         //in the Parent 
+        else if (pid > 0)
         {
-                scanf("%s", usr_str); //Scans the string from the user.
+                //get the string from the user
+                scanf("%s", usr_str); 
+                printf("plain text: %s\n",usr_str);
                 char child_str[32];
+                //only Writes to the first pipe
+                close(pipe1[0]);  
+                write(pipe1[1], usr_str, strlen(usr_str) + 1); 
+                close(pipe1[1]);  
 
-                close(pipe1[0]);                               //Closes reading of the first pipe.
-                write(pipe1[1], usr_str, strlen(usr_str) + 1); //Writes input string.
-                close(pipe1[1]);                               //Closes writing of the first pipe.
+                //Waits for the child to send a string.
+                sleep(0.1);
 
-                wait(NULL); //Waits for the child to send a string.
-                close(pipe2[1]); //Closes writing of the second pipe.
+                //only Reads to the second pipe
+                close(pipe2[1]); 
+                read(pipe2[0], child_str, 32); 
+                close(pipe2[0]);
 
-                read(pipe2[0], child_str, 32); //Reads string from the child.
+                //convert to string
                 std::string input(child_str);
                 input[32] = '\0';
-                checkSize = strlen(input.c_str());//.size()-6;//strlen(child_str);
-                close(pipe2[0]); //Closes reading of the second pipe.
+                //what is the size of the string
+                checkSize = strlen(input.c_str());
                 if (signal(SIGINT, sig_handler) == SIG_ERR)
                 printf("\ncan't catch SIGINT\n");
-                
-                kill(0,SIGINT);  
+                //sending the signal with the function "sig_handler"
+                //if its not 32 the process will die
+                kill(0,SIGINT); 
+                // if its 32 print and kill the son 
                 printf("encrypted by process %d : %s\n",pid, input.c_str());
                 kill(pid, SIGKILL);
         }
-
-        else //Child process:
+         // the Child
+        else 
         {
                 char child_str[20];
 
+                 //only Reads to the first pipe
                 close(pipe1[1]); 
-
                 read(pipe1[0], child_str, 20); 
-                std::string md5_str = md5(child_str);
-
                 close(pipe1[0]);
+
+                 //convert the string with md5 lib
+                std::string md5_str = md5(child_str);
+                 
+
+                //only Writes to the second pipe
                 close(pipe2[0]);
                 const char *output= md5_str.c_str();
                 write(pipe2[1], output, 32);
