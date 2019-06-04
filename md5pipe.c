@@ -74,7 +74,7 @@ int main()
         {
                 //printf("plain text : %s\n", usr_str);
                 scanf("%s", usr_str); //Scans the string from the user.
-                printf("plain text: %s\n", usr_str);
+                //printf("plain text: %s\n", usr_str);
                 char child_str[32];
 
                 close(pipe1[0]);                               //Closes reading of the first pipe.
